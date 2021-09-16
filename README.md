@@ -1,5 +1,7 @@
 # GitHub action to rebase multiple PRs
 
+A wrapper around [cirrus-actions/rebase](https://github.com/cirrus-actions/rebase) to allow rebasing multiple pull requests with a single action.
+
 ## Environment Variables
 
 - `PR_NUMBERS`: A space-delimited list of pull request numbers to attemp to rebase
