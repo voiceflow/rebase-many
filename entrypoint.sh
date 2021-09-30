@@ -22,5 +22,10 @@ do
     rebase_failure "$PR_NUMBER" "$REASON"
   fi
 
+  # Remove fork remote for subsequent rebases
+  if [[ "$(git remote)" == *fork* ]]; then
+    git remote remove fork
+  fi
+
   echo "$OUTPUT"
 done
