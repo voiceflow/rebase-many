@@ -1,7 +1,10 @@
 #!/bin/bash
 
 NEWLINE=$'\n'
+
 FAILED_LABEL="unable-auto-rebase"
+FAILED_LABEL_COLOR="1D76DB"
+FAILED_LABEL_DESCRIPTION="Pull requests that require manual action to rebase"
 
 # Configuration
 : "${COMMENT_ON_FAILURE:=false}" # Whether to comment on the pull request that fails to rebase
@@ -9,7 +12,7 @@ FAILED_LABEL="unable-auto-rebase"
 : "${LOG_LINES:=1}" # Number of log lines to include in pull request comment
 
 function rebase_failure {
-  /ghcli/bin/gh pr view 76 --json labels --jq '.labels[].name' | grep "$FAILED_LABEL" >/dev/null
+  /ghcli/bin/gh pr view $1 --json labels --jq '.labels[].name' | grep "$FAILED_LABEL" >/dev/null
   NO_LABEL=$?
 
   # Comment on PR with reason for failure
@@ -17,6 +20,9 @@ function rebase_failure {
     "Failed to automatically rebase this pull request:$NEWLINE
     $2$NEWLINE
 More details can be found in  workflow \"$GITHUB_WORKFLOW\" at https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+
+  # Ensure label exists before adding it
+  "${LABEL_ON_FAILURE}" && /ghcli/bin/gh api /repos/{owner}/{repo}/labels --field name="$FAILED_LABEL" --field color="$FAILED_LABEL_COLOR" --field description="$FAILED_LABEL_DESCRIPTION" || true
 
   # Add label denoting inability to automatically rebase
   "${LABEL_ON_FAILURE}" && /ghcli/bin/gh pr edit $1 --add-label "$FAILED_LABEL"
