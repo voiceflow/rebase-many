@@ -23,8 +23,8 @@ function rebase_failure {
 More details can be found in  workflow \"$GITHUB_WORKFLOW\" at https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
   fi
 
-  # Ensure label exists before adding it
   if "${LABEL_ON_FAILURE}"; then
+    # Ensure label exists before adding it
     /ghcli/bin/gh api /repos/{owner}/{repo}/labels --field name="$FAILED_LABEL" --field color="$FAILED_LABEL_COLOR" --field description="$FAILED_LABEL_DESCRIPTION" || true
 
     # Add label denoting inability to automatically rebase
