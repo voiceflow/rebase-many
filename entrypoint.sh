@@ -17,6 +17,7 @@ function rebase_failure {
 
   # Comment on PR with reason for failure
   if "${COMMENT_ON_FAILURE}" && (( $NO_LABEL )); then
+    echo "Posting comment on PR $1"
     /ghcli/bin/gh pr comment $1 --body \
     "Failed to automatically rebase this pull request:$NEWLINE
     $2$NEWLINE
@@ -25,9 +26,10 @@ More details can be found in  workflow \"$GITHUB_WORKFLOW\" at https://github.co
 
   if "${LABEL_ON_FAILURE}"; then
     # Ensure label exists before adding it
-    /ghcli/bin/gh api /repos/{owner}/{repo}/labels --field name="$FAILED_LABEL" --field color="$FAILED_LABEL_COLOR" --field description="$FAILED_LABEL_DESCRIPTION" || true
+    $(/ghcli/bin/gh api /repos/{owner}/{repo}/labels --field name="$FAILED_LABEL" --field color="$FAILED_LABEL_COLOR" --field description="$FAILED_LABEL_DESCRIPTION") || echo "Label $FAILED_LABEL already exists in repo"
 
     # Add label denoting inability to automatically rebase
+    echo "Adding label $FAILED_LABEL to PR $1"
     /ghcli/bin/gh pr edit $1 --add-label "$FAILED_LABEL"
   fi
 }
@@ -40,6 +42,7 @@ do
     rebase_failure "$PR_NUMBER" "$REASON"
   else
     # On success, remove label that indicates past failure
+    echo "Removing label $FAILED_LABEL from PR $1 due to successful rebase"
     /ghcli/bin/gh pr edit $PR_NUMBER --remove-label "$FAILED_LABEL"
   fi
 
