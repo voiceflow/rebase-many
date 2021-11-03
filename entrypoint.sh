@@ -36,7 +36,7 @@ More details can be found in  workflow \"$GITHUB_WORKFLOW\" at https://github.co
 
 for PR_NUMBER in $PR_NUMBERS
 do
-  if ! OUTPUT=$(PR_NUMBER=$PR_NUMBER /rebase/entrypoint.sh 2>&1)
+  if ! OUTPUT=$(PR_NUMBER=$PR_NUMBER bash -x /rebase/entrypoint.sh 2>&1)
   then
     REASON=$( echo "$OUTPUT" | tail -n "${LOG_LINES}" )
     rebase_failure "$PR_NUMBER" "$REASON"
