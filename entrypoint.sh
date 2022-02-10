@@ -44,17 +44,21 @@ do
 
     /ghcli/bin/gh pr view $PR_NUMBER --json comments,state,isDraft > pr_info.json
     if [[ $CHECK_DRAFT ]]; then
-      REBASE=$(cat pr_info.json | jq .isDraft)
-      echo "Checking if the PR is a draft: $REBASE"
+      DRAFT=$(cat pr_info.json | jq .isDraft)
+      echo "Checking if the PR is a draft: $DRAFT"
+      if [[ $DRAFT ]]; then
+        REBASE=false
+      fi
     fi
     if [[ $CHECK_BORS ]]; then
       # If bors is executing and the PR is not merged yet
       BORS_EXECUTING=$(cat pr_info.json | jq -c '.comments[] | select(.body | contains ( "bors r+" ) )')
       PR_MERGED_BY_BORS=$(cat pr_info.json | jq -c '.comments[] | select(.body | contains ( "merged into master" ) )')
       if [[ $BORS_EXECUTING != "" && $PR_MERGED_BY_BORS == "" ]]; then
-        echo "Bors is executing"
         REBASE=false
       fi
+
+      echo "Bors is executing: $REBASE"
     fi
   fi
 
@@ -77,5 +81,7 @@ do
     fi
 
     echo "$OUTPUT"
+  else
+    echo "Avoidiing rebase"
   fi
 done
