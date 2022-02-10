@@ -61,7 +61,7 @@ do
       echo "Bors r+ messages found: $BORS_EXECUTING"
       echo "Bors canceled messages found: $BORS_EXECUTING"
       echo "Bors merge messages found: $PR_MERGED_BY_BORS"
-      if [[ $BORS_EXECUTING -gt 0 && ( $BORS_EXECUTING -ne $BORS_CANCELED) && $PR_MERGED_BY_BORS -eq 0 ]]; then
+      if [[ $BORS_EXECUTING -gt 0 && $BORS_EXECUTING -ne $BORS_CANCELED && $PR_MERGED_BY_BORS -eq 0 ]]; then
         REBASE=false
         echo "Bors is executing"
       else 
