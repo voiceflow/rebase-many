@@ -39,18 +39,18 @@ More details can be found in  workflow \"$GITHUB_WORKFLOW\" at https://github.co
 
 for PR_NUMBER in $PR_NUMBERS
 do
-  REABSE=true
+  REBASE=true
   if [[ $CHECK_DRAFT || $CHECK_BORS ]]; then
 
     /ghcli/bin/gh pr view $PR_NUMBER --json comments,state,isDraft > pr_info.json
-    if [[ $CHECK_DRAFT ]]; then
+    if [[ $CHECK_DRAFT == true ]]; then
       DRAFT=$(cat pr_info.json | jq .isDraft)
       echo "Checking if the PR is a draft: $DRAFT"
-      if [[ $DRAFT ]]; then
+      if [[ $DRAFT == true ]]; then
         REBASE=false
       fi
     fi
-    if [[ $CHECK_BORS ]]; then
+    if [[ $CHECK_BORS == true ]]; then
       # If bors is executing and the PR is not merged yet
       BORS_EXECUTING=$(cat pr_info.json | jq -c '.comments[] | select(.body | contains ( "bors r+" ) )')
       PR_MERGED_BY_BORS=$(cat pr_info.json | jq -c '.comments[] | select(.body | contains ( "merged into master" ) )')
@@ -62,7 +62,7 @@ do
     fi
   fi
 
-  if [[ $REABSE ]]; then
+  if [[ $REBASE == true ]]; then
     echo "Running rebase script for PR $PR_NUMBER"
     if ! OUTPUT=$(PR_NUMBER=$PR_NUMBER /rebase/entrypoint.sh 2>&1)
     then
