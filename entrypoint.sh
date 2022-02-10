@@ -51,14 +51,22 @@ do
       fi
     fi
     if [[ $CHECK_BORS == true ]]; then
-      # If bors is executing and the PR is not merged yet
-      BORS_EXECUTING=$(cat pr_info.json | jq -c '.comments[] | select(.body | contains ( "bors r+" ) )')
-      PR_MERGED_BY_BORS=$(cat pr_info.json | jq -c '.comments[] | select(.body | contains ( "merged into master" ) )')
-      if [[ $BORS_EXECUTING != "" && $PR_MERGED_BY_BORS == "" ]]; then
+      # If bors is executing and the PR is not merged yet and number of bors+ !+ rojected by bors comments
+      BORS_EXECUTING=$(cat pr_info.json | jq -c '[.comments[] | select(.body | contains ( "bors r+" ) )] | length' )
+      BORS_CANCELED=$(cat pr_info.json | jq -c '[.comments[] | select(.body | contains ( ":-1: Rejected by" ) )] | length' )
+      PR_MERGED_BY_BORS=$(cat pr_info.json | jq -c '[.comments[] | select(.body | contains ( "merged into master" ) )] | length')
+
+      echo "Bors r+ messages found: $BORS_EXECUTING"
+      echo "Bors canceled messages found: $BORS_EXECUTING"
+      echo "Bors merge messages found: $PR_MERGED_BY_BORS"
+      if [[ $BORS_EXECUTING -gt 0 && ( $BORS_EXECUTING -ne $BORS_CANCELED) && $PR_MERGED_BY_BORS -eq 0 ]]; then
         REBASE=false
+        echo "Bors is executing"
+      else 
+        echo "Bors is not executing"
       fi
 
-      echo "Bors is executing: $BORS_EXECUTING. The PR is already Merged: $PR_MERGED_BY_BORS"
+     
     fi
   fi
 
