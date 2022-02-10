@@ -39,6 +39,8 @@ More details can be found in  workflow \"$GITHUB_WORKFLOW\" at https://github.co
 
 for PR_NUMBER in $PR_NUMBERS
 do
+  echo "Checking PR $PR_NUMBER"
+
   REBASE=true
   if [[ $CHECK_DRAFT || $CHECK_BORS ]]; then
 
@@ -90,6 +92,6 @@ do
 
     echo "$OUTPUT"
   else
-    echo "Avoidiing rebase"
+    echo "Avoiding rebase"
   fi
 done
