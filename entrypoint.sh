@@ -58,7 +58,7 @@ do
         REBASE=false
       fi
 
-      echo "Bors is executing: $REBASE"
+      echo "Bors is executing: $BORS_EXECUTING. The PR is already Merged: $PR_MERGED_BY_BORS"
     fi
   fi
 
