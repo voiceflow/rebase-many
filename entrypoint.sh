@@ -10,6 +10,9 @@ FAILED_LABEL_DESCRIPTION="Pull requests that require manual action to rebase"
 : "${COMMENT_ON_FAILURE:=false}" # Whether to comment on the pull request that fails to rebase
 : "${LABEL_ON_FAILURE:=false}" # Whether to label the pull request that fails to rebase
 : "${LOG_LINES:=1}" # Number of log lines to include in pull request comment
+: "${CHECK_DRAFT:=true}" # Check if a PR is a draft or not
+: "${CHECK_BORS:=true}" # Check if Bors is running
+
 
 function rebase_failure {
   /ghcli/bin/gh pr view $1 --json labels --jq '.labels[].name' | grep "$FAILED_LABEL" >/dev/null
@@ -36,22 +39,43 @@ More details can be found in  workflow \"$GITHUB_WORKFLOW\" at https://github.co
 
 for PR_NUMBER in $PR_NUMBERS
 do
-  echo "Running rebase script for PR $PR_NUMBER"
-  if ! OUTPUT=$(PR_NUMBER=$PR_NUMBER /rebase/entrypoint.sh 2>&1)
-  then
-    echo "Failed to rebase PR $PR_NUMBER"
-    REASON=$( echo "$OUTPUT" | tail -n "${LOG_LINES}" )
-    rebase_failure "$PR_NUMBER" "$REASON"
-  else
-    # On success, remove label that indicates past failure
-    echo "Removing label $FAILED_LABEL from PR $1 due to successful rebase"
-    /ghcli/bin/gh pr edit $PR_NUMBER --remove-label "$FAILED_LABEL"
+  REABSE=true
+  if [[ $CHECK_DRAFT || $CHECK_BORS ]]; then
+
+    /ghcli/bin/gh pr view $PR_NUMBER --json comments,state,isDraft > pr_info.json
+    if [[ $CHECK_DRAFT ]]; then
+      REBASE=$(cat pr_info.json | jq .isDraft)
+      echo "Checking if the PR is a draft: $REBASE"
+    fi
+    if [[ $CHECK_BORS ]]; then
+      # If bors is executing and the PR is not merged yet
+      BORS_EXECUTING=$(cat pr_info.json | jq -c '.comments[] | select(.body | contains ( "bors r+" ) )')
+      PR_MERGED_BY_BORS=$(cat pr_info.json | jq -c '.comments[] | select(.body | contains ( "merged into master" ) )')
+      if [[ $BORS_EXECUTING != "" && $PR_MERGED_BY_BORS == "" ]]; then
+        echo "Bors is executing"
+        REBASE=false
+      fi
+    fi
   fi
 
-  # Remove fork remote for subsequent rebases
-  if [[ "$(git remote)" == *fork* ]]; then
-    git remote remove fork
-  fi
+  if [[ $REABSE ]]; then
+    echo "Running rebase script for PR $PR_NUMBER"
+    if ! OUTPUT=$(PR_NUMBER=$PR_NUMBER /rebase/entrypoint.sh 2>&1)
+    then
+      echo "Failed to rebase PR $PR_NUMBER"
+      REASON=$( echo "$OUTPUT" | tail -n "${LOG_LINES}" )
+      rebase_failure "$PR_NUMBER" "$REASON"
+    else
+      # On success, remove label that indicates past failure
+      echo "Removing label $FAILED_LABEL from PR $1 due to successful rebase"
+      /ghcli/bin/gh pr edit $PR_NUMBER --remove-label "$FAILED_LABEL"
+    fi
 
-  echo "$OUTPUT"
+    # Remove fork remote for subsequent rebases
+    if [[ "$(git remote)" == *fork* ]]; then
+      git remote remove fork
+    fi
+
+    echo "$OUTPUT"
+  fi
 done
